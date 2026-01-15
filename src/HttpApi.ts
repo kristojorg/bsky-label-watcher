@@ -8,7 +8,7 @@ import {
   HttpServer,
 } from "@effect/platform"
 import { BunHttpServer } from "@effect/platform-bun"
-import { Effect, Layer, Schema } from "effect"
+import { Config, Effect, Layer, Schema } from "effect"
 
 // A simple API for checking on the service
 const ServerApi = HttpApi.make("ServerApi").add(
@@ -47,10 +47,19 @@ const ServerApiLive = HttpApiBuilder.api(ServerApi).pipe(
   Layer.provide(HealthLive),
 )
 
-// Set up the server using BunHttpServer on the default port
+// Set up the server using BunHttpServer with configurable port/host
+const ServerConfig = Config.all({
+  port: Config.integer("PORT").pipe(Config.withDefault(3000)),
+  hostname: Config.string("HOST").pipe(Config.withDefault("localhost")),
+})
+
 export const ApiLive = HttpApiBuilder.serve().pipe(
   Layer.provide(ServerApiLive),
   HttpServer.withLogAddress,
-  Layer.provide(BunHttpServer.layer({})),
+  Layer.provide(
+    Layer.unwrapEffect(
+      Effect.map(ServerConfig, (config) => BunHttpServer.layer(config))
+    )
+  ),
   Layer.provide(Cursor.Default),
 )
