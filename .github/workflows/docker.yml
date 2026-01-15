@@ -1,6 +1,8 @@
 name: Publish Docker image
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
 
@@ -28,6 +30,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: kristojorgenson/bsky-label-watcher
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+            type=semver,pattern={{version}}
 
       - name: Build and push Docker image
         id: push
