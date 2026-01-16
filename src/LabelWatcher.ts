@@ -16,11 +16,18 @@ const run = Effect.gen(function* () {
   const connect = yield* RetryingSocket;
   const agent = yield* AtpListAccountAgent;
   const cursor = yield* Cursor;
-  const initialCursor = yield* cursor.get;
   const { labelerSocketUrl } = yield* Env;
-  labelerSocketUrl.searchParams.set("cursor", initialCursor.toString());
 
-  const stream = connect({ url: labelerSocketUrl });
+  // Effect that builds URL with current cursor - re-evaluated on each reconnect
+  const getUrl = Effect.gen(function* () {
+    const currentCursor = yield* cursor.get;
+    const url = new URL(labelerSocketUrl.toString());
+    url.searchParams.set("cursor", currentCursor.toString());
+    yield* Effect.log(`Building connection URL with cursor: ${currentCursor}`);
+    return url;
+  });
+
+  const stream = connect({ getUrl });
 
   const runStream = stream.pipe(
     Stream.mapEffect(parseMessage),
