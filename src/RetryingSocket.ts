@@ -1,10 +1,7 @@
+import { wsReconnects } from "@/Metrics";
 import { Socket } from "@effect/platform";
 import type { SocketError } from "@effect/platform/Socket";
-import { Data, Effect, Schedule, Stream } from "effect";
-
-class BufferOverflowError extends Data.TaggedError("BufferOverflowError")<{
-  message: string;
-}> {}
+import { Effect, Metric, Schedule, Stream } from "effect";
 
 /**
  * A stream that will reconnect to the websocket on error.
@@ -15,33 +12,26 @@ const wsStream = <R>({ getUrl }: { getUrl: Effect.Effect<URL, never, R> }) =>
   Stream.asyncPush<Uint8Array<ArrayBufferLike>, SocketError, R>((emit) =>
     Effect.gen(function* () {
       const url = yield* getUrl;
-      yield* Effect.log("Connecting to websocket at: ", url.toString());
+      yield* Effect.log("Connecting to websocket at:", url.toString());
       const socket = yield* Socket.makeWebSocket(url.toString(), {
         closeCodeIsError: (_) => true,
       });
 
-      const e = socket
-        .run((d) =>
-          Effect.gen(function* () {
-            const didEmit = emit.single(d);
-            if (!didEmit) {
-              // this doesn't seem to work because asyncPush uses an unbounded queue internally
-              // and thus it only returns false when done.
-              yield* new BufferOverflowError({
-                message: "Socket buffer overflowed, failed to emit a message.",
-              });
-            }
-          })
-        )
+      // forkScoped ties the fiber to current scope - cleaned up on retry
+      yield* socket
+        .run((d) => Effect.sync(() => emit.single(d)))
         .pipe(
           Effect.catchTag("SocketError", (e) => Effect.succeed(emit.fail(e))),
-          Effect.fork
+          Effect.forkScoped
         );
-
-      yield* e;
     }).pipe(Effect.provide(Socket.layerWebSocketConstructorGlobal))
   ).pipe(
-    Stream.tapErrorCause(Effect.logError),
+    Stream.tapErrorCause((cause) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(cause);
+        yield* Metric.increment(wsReconnects);
+      })
+    ),
     Stream.retry(Schedule.spaced("1 second"))
   );
 
