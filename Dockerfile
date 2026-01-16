@@ -21,4 +21,5 @@ RUN mkdir -p /var/data/ && chown bun:bun /var/data/
 # run the app
 USER bun
 EXPOSE 3000/tcp
+EXPOSE 9464/tcp
 ENTRYPOINT [ "bun", "run", "src/main.ts" ]
