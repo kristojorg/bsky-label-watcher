@@ -47,8 +47,18 @@
   "dependencies": {
     "@atcute/cbor": "^2.1.1",
     "@atproto/api": "^0.14.21",
+    "@effect/opentelemetry": "^0.60.0",
     "@effect/platform": "^0.72.2",
     "@effect/platform-bun": "^0.52.2",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^2.4.0",
+    "@opentelemetry/exporter-prometheus": "^0.210.0",
+    "@opentelemetry/resources": "^2.4.0",
+    "@opentelemetry/sdk-logs": "^0.210.0",
+    "@opentelemetry/sdk-metrics": "^2.4.0",
+    "@opentelemetry/sdk-trace-base": "^2.4.0",
+    "@opentelemetry/sdk-trace-node": "^2.4.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
     "dotenv": "^16.4.7",
     "effect": "^3.12.2",
     "semver": "^7.6.3"

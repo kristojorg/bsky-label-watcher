@@ -1,6 +1,10 @@
 import { Socket } from "@effect/platform";
 import type { SocketError } from "@effect/platform/Socket";
-import { Cause, Effect, Schedule, Stream } from "effect";
+import { Data, Effect, Schedule, Stream } from "effect";
+
+class BufferOverflowError extends Data.TaggedError("BufferOverflowError")<{
+  message: string;
+}> {}
 
 /**
  * A stream that will reconnect to the websocket on error.

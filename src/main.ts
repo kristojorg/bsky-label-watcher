@@ -1,6 +1,7 @@
 import { ApiLive } from "@/HttpApi"
 import { LabelWatcherLive } from "@/LabelWatcher"
 import { LoggerLive } from "@/logger"
+import { MemoryMetricsLive, MetricsLive } from "@/Metrics"
 import { Layer } from "effect"
 import "dotenv/config"
 import { BunRuntime } from "@effect/platform-bun"
@@ -31,8 +32,10 @@ import { Env } from "@/Environment"
 export const MainLiveLayer = Layer.mergeAll(
   LabelWatcherLive.pipe(Layer.provide(Env.Default)),
   ApiLive,
+  MemoryMetricsLive,
 ).pipe(
   Layer.provide(LoggerLive),
+  Layer.provide(MetricsLive),
 )
 
 Layer.launch(MainLiveLayer).pipe(BunRuntime.runMain)

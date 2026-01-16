@@ -1,7 +1,8 @@
 import { AtpListAccountAgent } from "@/AtpAgent";
 import { Env } from "@/Environment";
+import { cursorGauge, listOperations, messagesProcessed } from "@/Metrics";
 import { decodeFirst } from "@atcute/cbor";
-import { Data, Effect, Layer, Schema, Stream } from "effect";
+import { Data, Effect, Layer, Metric, Schema, Stream } from "effect";
 import { Cursor } from "./Cursor";
 import { RetryingSocket } from "./RetryingSocket";
 import { MessageLabels, parseSubscribeLabelsMessage } from "./schema";
@@ -67,15 +68,22 @@ export const LabelWatcherLive = Layer.scopedDiscard(run).pipe(
  */
 const handleLabel = (agent: AtpListAccountAgent) => (label: MessageLabels) =>
   Effect.gen(function* () {
+    yield* Metric.increment(messagesProcessed);
+
     const labels = label.body.labels;
     for (const label of labels) {
       if (label.neg) {
         yield* agent.removeUserFromList(label.uri, label.val);
+        yield* Metric.increment(Metric.tagged(listOperations, "op", "remove"));
         continue;
       }
       yield* agent.addUserToList(label.uri, label.val);
+      yield* Metric.increment(Metric.tagged(listOperations, "op", "add"));
     }
-    return label.body.seq;
+
+    const seq = label.body.seq;
+    yield* Metric.set(cursorGauge, seq);
+    return seq;
   });
 
 const parseMessage = (u: Uint8Array) =>

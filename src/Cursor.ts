@@ -79,11 +79,6 @@ const writeCursor = (env: Env, fs: FileSystem.FileSystem) => (cursor: number) =>
   Effect.gen(function*() {
     yield* Effect.log("Writing cursor to file: ", cursor)
     const { labelerCursorFilepath } = env
-    yield* Effect.tryPromise({
-      try: () => Bun.write(labelerCursorFilepath, cursor.toString()),
-      catch: (cause) =>
-        new CursorError({ message: "Failed to write cursor", cause }),
-    })
     yield* fs.writeFileString(labelerCursorFilepath, cursor.toString())
   }).pipe(Effect.catchAllCause(Effect.logError))
 
