@@ -33,9 +33,6 @@ export const recordMemoryMetrics = Effect.gen(function* () {
   const mem = process.memoryUsage()
   yield* Metric.set(heapUsed, mem.heapUsed)
   yield* Metric.set(rss, mem.rss)
-  yield* Effect.log(
-    `Memory: heap=${Math.round(mem.heapUsed / 1024 / 1024)}MB, rss=${Math.round(mem.rss / 1024 / 1024)}MB`
-  )
 }).pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped)
 
 // Prometheus exporter config
